@@ -8,8 +8,8 @@ namespace backend.Models
     public class Booking
     {
         public int Id { get; private set; }
-        public DateTime StartTime { get; private set; }
-        public DateTime EndTime { get; private set; } 
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; } 
 
         public int ClientId { get; set; }
         public Client Client { get; set; } = null!;
