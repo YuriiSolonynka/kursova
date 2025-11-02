@@ -5,6 +5,8 @@ using System.Text;
 using backend.Models;
 using backend.Models.DTOs;
 using backend.Repositories;
+using System.Security.Claims;
+using Microsoft.Extensions.Configuration;
 
 namespace backend.Services
 {
@@ -59,8 +61,20 @@ namespace backend.Services
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-                // new Claim(ClaimTypes.Role, user.Role) 
             };
+
+            if (user is Admin)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+            }
+            else if (user is Trainer)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "Trainer"));
+            }
+            else if (user is Client)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "Client"));
+            }
             
             var tokenDescriptor = new SecurityTokenDescriptor
             {
