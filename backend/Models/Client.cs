@@ -23,5 +23,42 @@ namespace backend.Models
 
         public int ClientId { get; set; }
         public Client Client { get; set; } = null!;
+        
+        public MembershipCard(string cardType)
+        {
+            this.CardType = cardType;
+            this.BonusPoints = 0;
+            this.Status = true;
+        }
+        
+        public void AddPoints(int points)
+        {
+            if (points <= 0) return;
+            this.BonusPoints += points;
+        }
+
+        public void SpendPoints(int points)
+        {
+            if (points <= 0) return;
+            if (this.BonusPoints < points)
+            {
+                throw new InvalidOperationException("Недостатньо бонусів.");
+            }
+            this.BonusPoints -= points;
+        }
+
+        public void UpgradeCard(string newType)
+        {
+            this.CardType = newType;
+        }
+
+        public void Freeze()
+        {
+            this.Status = false;
+        }
+        public void Activate()
+        {
+            this.Status = true;
+        }
     }
 }

@@ -23,6 +23,12 @@ builder.Services.AddScoped<ISectionRepository, SectionRepository>();
 builder.Services.AddScoped<ISectionService, SectionService>();
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IHallRepository, HallRepository>();
+builder.Services.AddScoped<IHallService, HallService>();
+builder.Services.AddScoped<IMembershipCardRepository, MembershipCardRepository>();
+builder.Services.AddScoped<IMembershipCardService, MembershipCardService>();
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 
 builder.Services.AddControllers();
