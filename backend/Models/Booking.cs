@@ -11,6 +11,10 @@ namespace backend.Models
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; } 
 
+        public decimal TotalPrice { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public int BonusPointsAwarded { get; set; }
+        
         public int ClientId { get; set; }
         public Client Client { get; set; } = null!;
 
