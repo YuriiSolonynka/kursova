@@ -29,7 +29,7 @@ builder.Services.AddScoped<IMembershipCardRepository, MembershipCardRepository>(
 builder.Services.AddScoped<IMembershipCardService, MembershipCardService>();
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
-
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddControllers();
 builder.Services.AddAuthentication(options =>

@@ -37,5 +37,11 @@ namespace backend.Repositories
         {
             return await _context.Users.FindAsync(id);
         }
+        
+        public async Task UpdateAsync(User user)
+        {
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+        }
     }
 }
