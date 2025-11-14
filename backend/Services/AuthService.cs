@@ -1,6 +1,6 @@
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt; 
-using System.Security.Claims;         
+using System.Security.Claims;
 using System.Text;
 using backend.Models;
 using backend.Models.DTOs;
@@ -13,12 +13,17 @@ namespace backend.Services
     public class AuthService : IAuthService
     {
         private readonly IUserRepository _userRepository;
-        private readonly IConfiguration _configuration; 
+        private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
-        public AuthService(IUserRepository userRepository, IConfiguration configuration)
+        public AuthService(
+            IUserRepository userRepository, 
+            IConfiguration configuration,
+            IEmailService emailService)
         {
             _userRepository = userRepository;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
         public async Task<User> RegisterAsync(RegisterRequestDto requestDto)
@@ -35,7 +40,20 @@ namespace backend.Services
             newClient.UpdatePhone(requestDto.Phone);
             newClient.SetPassword(requestDto.Password);
             
-            return await _userRepository.AddAsync(newClient);
+            var createdUser = await _userRepository.AddAsync(newClient);
+
+            try
+            {
+                string subject = "Ласкаво просимо до SportsBooking!";
+                string body = $"<h1>Вітаємо, {createdUser.Name}!</h1><p>Ви успішно зареєструвалися на нашому сервісі.</p>";
+                await _emailService.SendEmailAsync(createdUser.Email, subject, body);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Не вдалося відправити лист: {ex.Message}");
+            }
+
+            return createdUser;
         }
 
         public async Task<string> LoginAsync(LoginRequestDto requestDto)
