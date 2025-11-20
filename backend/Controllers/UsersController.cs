@@ -18,6 +18,37 @@ namespace backend.Controllers
             _userService = userService;
         }
 
+        
+        public class UserProfileDto
+        {
+            public string Name { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public string Phone { get; set; } = string.Empty;
+        }
+
+        // GET /api/users/me
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMyProfile()
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            try
+            {
+                var user = await _userService.GetProfileAsync(userId);
+                
+                // Повертаємо безпечний DTO, а не всю модель User
+                return Ok(new UserProfileDto 
+                { 
+                    Name = user.Name, 
+                    Email = user.Email, 
+                    Phone = user.Phone 
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
         // PUT /api/users/me
         [HttpPut("me")]
         public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateProfileRequestDto request)

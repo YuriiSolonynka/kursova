@@ -12,6 +12,15 @@ namespace backend.Services
         {
             _userRepository = userRepository;
         }
+        public async Task<User> GetProfileAsync(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("User not found.");
+            }
+            return user;
+        }
 
         public async Task ChangePasswordAsync(int userId, ChangePasswordRequestDto request)
         {
