@@ -1,44 +1,70 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5009/api';
+const API_URL = 'http://localhost:5000/api';
+const AuthContext = createContext();
 
-const AuthContext = createContext(null);
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
 
-  const login = async (email, password) => {
-    try {
-      const response = await axios.post(`${API_URL}/Auth/login`, { email, password });
-      
-      const { token } = response.data;
-      
-      setToken(token);
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
 
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    if (token && storedUser) {
+      const parsed = JSON.parse(storedUser);
 
-      return true; // Успіх
-    } catch (error) {
-      console.error("Помилка логіну:", error);
-      throw error;
+      setUser(parsed);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${parsed.token}`;
     }
+  }, []);
+
+  const login = async (email, password) => {
+    const res = await axios.post(`${API_URL}/auth/login`, { email, password });
+
+    if (!res.data.token) {
+      throw new Error(res.data.message || 'Invalid credentials');
+    }
+
+    const { token, user } = res.data;
+    const fullUser = { ...user, token };
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(fullUser));
+
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(fullUser);
+  };
+
+  const updateUser = (data) => {
+    setUser(prev => {
+      const updated = { ...prev, ...data };
+      localStorage.setItem("user", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const logout = () => {
-    setToken(null);
-    setUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     delete axios.defaults.headers.common['Authorization'];
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token: user?.token,
+        login,
+        logout,
+        updateUser,
+        isAuthenticated: !!user,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  return useContext(AuthContext);
 };
