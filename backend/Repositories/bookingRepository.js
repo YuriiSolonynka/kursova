@@ -30,6 +30,15 @@ class BookingRepository {
         return await Booking.findOne({ _id: bookingId, user: userId });
     };
 
+    async findConfirmedBookingsByDate(dateStr) {
+        return await Booking.find({
+            date: dateStr,
+            status: "confirmed"
+        })
+            .populate("user", "name email")
+            .populate("section", "name")
+    }
+
     async cancelBooking(booking) {
         booking.status = "canceled";
         return await booking.save();

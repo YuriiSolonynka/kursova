@@ -6,7 +6,8 @@ const membershipSchema = new mongoose.Schema({
     price: { type: Number, required: true },
     startDate: { type: Date, default: Date.now },
     endDate: { type: Date, required: true },
-    status: { type: String, enum: ["active", "expired", "canceled"], default: "active" }
+    status: { type: String, enum: ["active", "expired", "canceled"], default: "active" },
+    accessibleSections: { type: String, default: "" }
 });
 
 const Membership = mongoose.model("Membership", membershipSchema);

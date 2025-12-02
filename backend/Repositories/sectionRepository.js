@@ -27,6 +27,10 @@ class SectionRepository {
       schedule: JSON.parse(sectionObj.schedule || "[]"),
     };
   }
+
+  async findByIds(ids) {
+    return await Section.find({ _id: { $in: ids } });
+  }
 }
 
 export default new SectionRepository();

@@ -12,7 +12,14 @@ class UserRepository {
   }
 
   async findByEmailAndValidatePassword(email, password) {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email })
+      .populate({
+        path: 'subscription',
+        populate: {
+          path: 'plan',
+          select: 'name'
+        }
+      });
     if (!user) return null;
 
     const isMatch = await user.matchPassword(password);
@@ -22,7 +29,15 @@ class UserRepository {
   }
 
   async findById(id) {
-    return User.findById(id).select('-password');
+    return User.findById(id)
+      .select('-password')
+      .populate({
+        path: 'subscription',
+        populate: {
+          path: 'plan',
+          select: 'name price'
+        }
+      });
   }
 
   async findUserById(userId) {

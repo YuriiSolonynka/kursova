@@ -10,8 +10,20 @@ const userSchema = new mongoose.Schema(
     avatar: { type: String, default: "" },
     bonusPoints: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
+
+userSchema.virtual('subscription', {
+  ref: 'Membership',
+  localField: '_id',
+  foreignField: 'user',
+  justOne: true,
+  match: { status: 'active' }
+});
 
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;

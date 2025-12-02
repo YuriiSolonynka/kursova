@@ -8,6 +8,10 @@ class SectionService {
   async getSectionById(id) {
     return await sectionRepository.findById(id);
   }
+
+  async getSectionsByIds(ids) {
+    return await sectionRepository.findByIds(ids);
+  }
 }
 
 export default new SectionService();

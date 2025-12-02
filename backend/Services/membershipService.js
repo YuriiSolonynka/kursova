@@ -2,6 +2,7 @@ import membershipRepository from "../repositories/membershipRepository.js";
 import { DiscountContext } from "./pricing/discountContext.js";
 import { PhoneDiscountStrategy, NoDiscountStrategy } from "./pricing/discountStrategy.js";
 import userRepository from "../repositories/userRepository.js";
+import SectionService from "./sectionService.js";
 
 class MembershipService {
     async getPlans() {
@@ -21,7 +22,7 @@ class MembershipService {
         return membership;
     }
 
-    async buyMembership(userId, planId) {
+    async buyMembership(userId, planId, sectionIds = []) {
         const plan = await membershipRepository.getPlanById(planId);
         if (!plan) throw new Error("PLAN_NOT_FOUND");
 
@@ -33,18 +34,25 @@ class MembershipService {
         }
 
         const context = new DiscountContext(strategy);
-
         const finalPrice = context.apply(plan.price);
 
         const endDate = new Date();
         endDate.setDate(endDate.getDate() + plan.durationDays);
+
+        let sectionsString = "";
+
+        if (Array.isArray(sectionIds) && sectionIds.length > 0) {
+            const sections = await SectionService.getSectionsByIds(sectionIds);
+            sectionsString = sections.map(s => s.name).join(', ');
+        }
 
         return membershipRepository.createMembership({
             user: userId,
             plan: plan._id,
             price: finalPrice,
             endDate,
-            discountApplied: finalPrice !== plan.price
+            discountApplied: finalPrice !== plan.price,
+            accessibleSections: sectionsString
         });
     }
 

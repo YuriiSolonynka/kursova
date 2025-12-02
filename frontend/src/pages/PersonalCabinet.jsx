@@ -6,11 +6,11 @@ import ProfileTab from "../components/profileSections/ProfileTab";
 import MembershipsTab from "../components/profileSections/MembershipsTab";
 import LoyaltyTab from "../components/profileSections/LoyaltyTab";
 import { LoaderCircle } from 'lucide-react';
-
+import { useAuth } from "../context/AuthContext";
 
 function PersonalCabinet() {
-
   const [activeTab, setActiveTab] = useState("bookings");
+  const { updateUser } = useAuth();
 
   const [profileData, setProfileData] = useState({
     name: "",
@@ -22,9 +22,11 @@ function PersonalCabinet() {
   const [bookings, setBookings] = useState([]);
   const [currentPlan, setCurrentPlan] = useState({});
   const [membershipPlans, setMembershipPlans] = useState([]);
+
+  // 1. Стейт для списку всіх секцій (для Corporate плану)
+  const [allSections, setAllSections] = useState([]);
+
   const [loyaltyCard, setLoyaltyCard] = useState({ bonusPoints: 0, bonusHistory: [] });
-
-
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -33,12 +35,14 @@ function PersonalCabinet() {
       try {
         setIsLoading(true);
 
-        const [profileRes, bookingsRes, subsRes, plansRes, loyaltyRes] = await Promise.all([
+        // 2. Додаємо запит за секціями: axiosInstance.get("/sections")
+        const [profileRes, bookingsRes, subsRes, plansRes, loyaltyRes, sectionsRes] = await Promise.all([
           axiosInstance.get("/profile/me"),
           axiosInstance.get("/bookings/my"),
           axiosInstance.get("/memberships/my"),
           axiosInstance.get("/memberships/plans"),
-          axiosInstance.get("/loyalty")
+          axiosInstance.get("/loyalty"),
+          axiosInstance.get("/sections") // <--- Отримуємо список секцій з бекенду
         ]);
 
         setProfileData({
@@ -50,6 +54,10 @@ function PersonalCabinet() {
         setCurrentPlan(subsRes.data);
         setMembershipPlans(plansRes.data);
         setLoyaltyCard(loyaltyRes.data);
+
+        // Зберігаємо секції в стейт
+        setAllSections(sectionsRes.data);
+
       } catch (err) {
         console.error(err);
         setError("Failed to load data.");
@@ -63,25 +71,18 @@ function PersonalCabinet() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "confirmed":
-        return "text-green-400";
-      case "canceled":
-        return "text-red-500";
-      case "pending":
-        return "text-yellow-400";
-      default:
-        return "text-gray-300";
+      case "confirmed": return "text-green-400";
+      case "canceled": return "text-red-500";
+      case "pending": return "text-yellow-400";
+      default: return "text-gray-300";
     }
   };
 
   const handleCancelBooking = async (id) => {
     if (!window.confirm("Are you sure you want to cancel this booking?")) return;
-
     try {
       await axiosInstance.delete(`/bookings/${id}`);
-      setBookings((prev) =>
-        prev.map((b) => (b._id === id ? { ...b, status: "canceled" } : b))
-      );
+      setBookings((prev) => prev.map((b) => (b._id === id ? { ...b, status: "canceled" } : b)));
       alert("Booking successfully canceled!");
     } catch (err) {
       console.error("Cancel failed", err);
@@ -91,7 +92,6 @@ function PersonalCabinet() {
 
   const handleProfileSave = async (formData, setSaveStatus) => {
     setSaveStatus("Saving...");
-
     try {
       const data = new FormData();
       data.append("name", formData.name);
@@ -104,16 +104,11 @@ function PersonalCabinet() {
 
       setProfileData({
         ...res.data,
-        avatar: res.data.avatar
-          ? `http://localhost:5000${res.data.avatar}`
-          : "",
+        avatar: res.data.avatar ? `http://localhost:5000${res.data.avatar}` : "",
       });
-
       setSaveStatus("Saved!");
       setTimeout(() => setSaveStatus(""), 2000);
-
       return res.data;
-
     } catch (err) {
       console.error(err);
       setSaveStatus("Error!");
@@ -121,27 +116,31 @@ function PersonalCabinet() {
     }
   };
 
-  const handleBuyMembership = async (planId) => {
-    if (!window.confirm("Buy this membership?")) return;
-
+  const handleBuyMembership = async (planId, sectionIds = []) => {
     try {
-      await axiosInstance.post("/memberships/buy", { planId });
+      await axiosInstance.post("/memberships/buy", { planId, sectionIds });
+
       alert("Membership purchased!");
+
       const res = await axiosInstance.get("/memberships/my");
       setCurrentPlan(res.data);
+      updateUser({ subscription: res.data });
+
     } catch (err) {
       console.error(err);
       alert("Failed to purchase membership.");
+      throw err;
     }
   };
 
   const handleCancelMembership = async (id) => {
     if (!window.confirm("Cancel this membership?")) return;
-
     try {
       await axiosInstance.delete(`/memberships/${id}`);
       alert("Membership canceled!");
-      setCurrentPlan((prev) => prev(s => s._id === id ? { ...s, status: "canceled" } : s));
+      const updatedPlan = { ...currentPlan, status: "canceled" };
+      setCurrentPlan(updatedPlan);
+      updateUser({ subscription: updatedPlan });
     } catch (err) {
       console.error(err);
       alert("Failed to cancel membership.");
@@ -157,21 +156,13 @@ function PersonalCabinet() {
   return (
     <div className="bg-gray-950 flex-1">
       <div className="flex justify-center min-h-[calc(100vh-77px)]">
-
-        <Sidebar
-          navItems={navItems}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-        />
+        <Sidebar navItems={navItems} activeTab={activeTab} setActiveTab={setActiveTab} />
 
         <main className="flex-1 p-12 overflow-y-auto">
           {isLoading ? (
-            <>
-              <h1 className="text-4xl font-bold text-white mb-12">My Bookings</h1>
-              <div className="w-full mt-20 flex justify-center items-center">
-                <LoaderCircle className="animate-spin text-white w-12 h-12" />
-              </div>
-            </>
+            <div className="w-full mt-20 flex justify-center items-center">
+              <LoaderCircle className="animate-spin text-white w-12 h-12" />
+            </div>
           ) : error ? (
             <div className="p-12 text-red-500">{error}</div>
           ) : (
@@ -187,10 +178,7 @@ function PersonalCabinet() {
               {activeTab === "profile" && (
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <ProfileTab
-                      profileData={profileData}
-                      handleProfileSave={handleProfileSave}
-                    />
+                    <ProfileTab profileData={profileData} handleProfileSave={handleProfileSave} />
                   </div>
                   <div className="flex-1">
                     <LoyaltyTab loyaltyCard={loyaltyCard} />
@@ -205,16 +193,15 @@ function PersonalCabinet() {
                   onBuyMembership={handleBuyMembership}
                   onCancelMembership={handleCancelMembership}
                   profile={profileData}
+                  allSections={allSections}
                 />
               )}
             </>
           )}
         </main>
-
       </div>
     </div>
   );
-
 }
 
 export default PersonalCabinet;

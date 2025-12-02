@@ -14,8 +14,12 @@ export const buy = async (req, res) => {
     try {
         const membership = await membershipService.buyMembership(
             req.user.id,
-            req.body.planId
+            req.body.planId,
+            req.body.sectionIds
         );
+
+        await membership.populate('plan');
+
         res.json(membership);
     } catch (err) {
         if (err.message === "PLAN_NOT_FOUND")
@@ -25,7 +29,6 @@ export const buy = async (req, res) => {
         res.status(500).json({ error: "Failed to buy membership" });
     }
 }
-
 export const cancel = async (req, res) => {
     try {
         const membership = await membershipService.cancelMembership(

@@ -1,12 +1,23 @@
-
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../components/ui/ToastContext";
 
 function SectionModal({ isOpen, onClose, section }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addToast } = useToast();
 
   if (!isOpen || !section) return null
 
+
+  const isRestricted = user?.subscription?.planName === "Standard";
+
   const handleBookNow = () => {
+    if (isRestricted) {
+      addToast("You must buy a higher subscription to book!", "error");
+      return;
+    }
+
     onClose();
     navigate(`/book-section/${section._id}`);
   }
@@ -48,7 +59,7 @@ function SectionModal({ isOpen, onClose, section }) {
 
             <div className="mb-10">
               <h3 className="text-xl font-semibold text-white mb-4">Address</h3>
-              <p className="text-gray-400 leading-relaxed text-lg mb-4">{section.gymId.address}</p>
+              <p className="text-gray-400 leading-relaxed text-lg mb-4">{section.gymId?.address}</p>
               <h3 className="text-xl font-semibold text-white mb-4">About This Section</h3>
               <p className="text-gray-400 leading-relaxed text-lg mb-4">{section.description}</p>
               <p className="text-gray-400 leading-relaxed text-lg mb-4">
@@ -93,10 +104,19 @@ function SectionModal({ isOpen, onClose, section }) {
 
             <button
               onClick={handleBookNow}
-              className="w-full py-4 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              className={`w-full py-4 text-lg font-semibold rounded-lg transition-colors duration-200
+                ${isRestricted
+                  ? "bg-gray-600 cursor-not-allowed text-gray-300 hover:bg-gray-600"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
             >
-              Book Now
+              {isRestricted ? "Upgrade Subscription to Book" : "Book Now"}
             </button>
+            {isRestricted && (
+              <p className="text-red-500 text-lg mt-3 text-center">
+                Your "Standard" plan does not allow booking this section.
+              </p>
+            )}
           </div>
         </div>
       </div>

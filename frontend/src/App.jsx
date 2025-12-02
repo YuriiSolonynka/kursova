@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import { ToastProvider } from "./components/ui/ToastContext";
+import NotificationListener from "./components/NotificationListener";
 import Header from "./components/ui/Header"
 import Trainers from "./pages/Trainers"
 import Gyms from "./pages/Gyms";
@@ -10,10 +11,10 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import HomePage from "./pages/Home";
 
-
 function App() {
   return (
     <ToastProvider>
+      <NotificationListener />
       <div className="bg-black min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow">
